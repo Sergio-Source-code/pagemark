@@ -1,0 +1,628 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>pagemark</title>
+<meta name="description" content="Save the lines worth keeping.">
+<meta name="theme-color" content="#f1e6d0" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1f1611" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%233b2a1e'/%3E%3Cpath d='M10 6h12v20l-6-5-6 5z' fill='%23d9742a'/%3E%3C/svg%3E">
+<style>
+  :root {
+    --paper: #f1e6d0;
+    --paper-2: #f8f0df;
+    --card: #fbf5e8;
+    --ink: #3b2a1e;
+    --ink-soft: #7a6350;
+    --line: #dcc9a8;
+    --accent: #c4601a;
+    --accent-ink: #fff7ea;
+    --accent-hover: #a94f12;
+    --shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 1px 2px rgba(59,42,30,.08), 0 6px 18px -8px rgba(59,42,30,.25);
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, "Times New Roman", serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --paper: #1f1611;
+      --paper-2: #281d16;
+      --card: #2b2018;
+      --ink: #eadcc3;
+      --ink-soft: #a58e76;
+      --line: #4a382b;
+      --accent: #e0803a;
+      --accent-ink: #20140b;
+      --accent-hover: #f0954f;
+      --shadow: 0 1px 0 rgba(255,255,255,.04) inset, 0 6px 18px -8px rgba(0,0,0,.6);
+    }
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    min-height: 100dvh;
+    background:
+      radial-gradient(1200px 500px at 50% -200px, var(--paper-2), transparent 70%),
+      var(--paper);
+    color: var(--ink);
+    font-family: var(--serif);
+    font-size: 17px;
+    line-height: 1.5;
+    padding: max(20px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) calc(110px + env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  main { max-width: 600px; margin: 0 auto; }
+
+  header { text-align: center; padding: 18px 0 22px; }
+  .logo {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 400;
+    letter-spacing: .04em;
+    font-style: italic;
+  }
+  .logo span { color: var(--accent); font-style: normal; font-weight: 700; }
+  .tag {
+    margin: 2px 0 0;
+    color: var(--ink-soft);
+    font-size: .85rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .rule {
+    display: flex; align-items: center; gap: 10px; justify-content: center;
+    margin-top: 14px; color: var(--accent);
+  }
+  .rule::before, .rule::after { content: ""; height: 1px; width: 56px; background: var(--line); }
+  .rule svg { width: 14px; height: 14px; }
+
+  /* Composer */
+  form {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    padding: 14px;
+    box-shadow: var(--shadow);
+    position: relative;
+  }
+  form::before {
+    content: "";
+    position: absolute; top: -1px; left: 22px;
+    width: 14px; height: 26px;
+    background: var(--accent);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 50% 78%, 0 100%);
+    opacity: .9;
+  }
+  label.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+  textarea, input {
+    width: 100%;
+    font: inherit;
+    font-size: 16px; /* prevents iOS zoom */
+    color: var(--ink);
+    background: transparent;
+    border: 0;
+    outline: 0;
+    border-radius: 6px;
+  }
+  textarea::placeholder, input::placeholder { color: var(--ink-soft); opacity: .75; font-style: italic; }
+  #text {
+    display: block;
+    min-height: 120px;
+    max-height: 50vh;
+    resize: none;
+    padding: 22px 4px 10px;
+    font-size: 1.15rem;
+    line-height: 1.55;
+  }
+  .meta { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; border-top: 1px dashed var(--line); padding-top: 10px; }
+  .meta input {
+    padding: 10px 10px;
+    border: 1px solid var(--line);
+    background: var(--paper-2);
+    font-size: 16px;
+  }
+  .meta input:focus, #search:focus { border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 22%, transparent); }
+  @media (max-width: 420px) { .meta { grid-template-columns: 1fr; } }
+
+  .actions { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 12px; }
+  .hint { color: var(--ink-soft); font-size: .78rem; font-style: italic; }
+  @media (hover: none) { .hint { display: none; } }
+  button { font: inherit; cursor: pointer; }
+  .save {
+    margin-left: auto;
+    background: var(--accent);
+    color: var(--accent-ink);
+    border: 0;
+    border-radius: 8px;
+    padding: 12px 26px;
+    min-height: 46px;
+    font-weight: 700;
+    letter-spacing: .06em;
+    box-shadow: 0 2px 0 rgba(0,0,0,.18);
+    transition: background .15s, transform .08s, opacity .15s;
+  }
+  .save:hover:not(:disabled) { background: var(--accent-hover); }
+  .save:active:not(:disabled) { transform: translateY(1px); }
+  .save:disabled { opacity: .4; cursor: not-allowed; box-shadow: none; }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  /* List */
+  .list-head { display: flex; align-items: center; gap: 12px; margin: 30px 2px 12px; }
+  .list-head h2 { margin: 0; font-size: .8rem; font-weight: 400; letter-spacing: .16em; text-transform: uppercase; color: var(--ink-soft); white-space: nowrap; }
+  .list-head h2 b { color: var(--accent); font-weight: 700; }
+  .searchbox { position: relative; flex: 1; }
+  .searchbox svg { position: absolute; left: 11px; top: 50%; width: 16px; height: 16px; transform: translateY(-50%); color: var(--ink-soft); pointer-events: none; }
+  #search {
+    padding: 9px 34px 9px 34px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    border-radius: 999px;
+    -webkit-appearance: none; appearance: none;
+  }
+  #search::-webkit-search-cancel-button { -webkit-appearance: none; display: none; }
+  .clear {
+    position: absolute; right: 4px; top: 50%; transform: translateY(-50%);
+    width: 30px; height: 30px; border: 0; border-radius: 50%;
+    background: transparent; color: var(--ink-soft); font-size: 20px; line-height: 1;
+  }
+  .clear[hidden] { display: none; }
+
+  ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .quote {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    border-radius: 4px 10px 10px 4px;
+    padding: 16px 16px 6px 18px;
+    box-shadow: var(--shadow);
+    animation: rise .28s ease both;
+  }
+  @keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .quote blockquote { margin: 0; position: relative; }
+  .quote blockquote p {
+    margin: 0;
+    white-space: pre-wrap;
+    overflow-wrap: anywhere;
+    font-size: 1.08rem;
+    line-height: 1.6;
+  }
+  .quote blockquote p::first-letter { color: var(--accent); }
+  .cite { margin: 10px 0 0; font-size: .92rem; color: var(--ink-soft); overflow-wrap: anywhere; }
+  .cite::before { content: "— "; color: var(--accent); }
+  .cite i { color: var(--ink); }
+  .foot { display: flex; align-items: center; justify-content: space-between; margin-top: 8px; padding: 4px 0 6px; border-top: 1px dotted var(--line); }
+  .foot time { font-size: .76rem; color: var(--ink-soft); letter-spacing: .04em; }
+  .tools { display: flex; gap: 2px; margin-right: -8px; }
+  .tool {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 44px; height: 44px; margin: -4px 0;
+    background: transparent; border: 0; border-radius: 8px;
+    color: var(--ink-soft);
+    transition: color .15s, background .15s;
+  }
+  .tool svg { width: 19px; height: 19px; }
+  .tool:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
+  .tool.del:hover { color: #b3341d; background: color-mix(in srgb, #b3341d 10%, transparent); }
+  mark { background: color-mix(in srgb, var(--accent) 30%, transparent); color: inherit; border-radius: 2px; padding: 0 1px; }
+
+  .empty { text-align: center; color: var(--ink-soft); padding: 34px 20px; font-style: italic; }
+  .empty svg { width: 34px; height: 34px; color: var(--accent); opacity: .8; display: block; margin: 0 auto 8px; }
+
+  /* Toast */
+  .toast {
+    position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom));
+    transform: translate(-50%, 20px);
+    max-width: calc(100vw - 32px);
+    display: flex; align-items: center; gap: 14px;
+    background: var(--ink); color: var(--paper);
+    padding: 6px 8px 6px 18px; min-height: 48px;
+    border-radius: 10px;
+    box-shadow: 0 10px 30px -8px rgba(0,0,0,.5);
+    opacity: 0; pointer-events: none;
+    transition: opacity .2s, transform .2s;
+    z-index: 10;
+    font-size: .95rem;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); pointer-events: auto; }
+  .toast button {
+    background: transparent; border: 0; color: var(--accent); font-weight: 700;
+    letter-spacing: .06em; text-transform: uppercase; font-size: .82rem;
+    padding: 0 12px; min-height: 44px; border-radius: 6px;
+  }
+  @media (prefers-color-scheme: light) { .toast button { color: #f2a063; } }
+  .toast button[hidden] { display: none; }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <h1 class="logo">page<span>mark</span></h1>
+    <p class="tag">keep the lines worth keeping</p>
+    <div class="rule" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2l2.4 7.6H22l-6.2 4.5 2.4 7.6L12 17.2 5.8 21.7l2.4-7.6L2 9.6h7.6z"/></svg>
+    </div>
+  </header>
+
+  <form id="form" autocomplete="off">
+    <label class="sr" for="text">Quote</label>
+    <textarea id="text" placeholder="scan a page" rows="4" enterkeyhint="enter"></textarea>
+    <div class="meta">
+      <div>
+        <label class="sr" for="book">Book (optional)</label>
+        <input id="book" type="text" placeholder="book (optional)" enterkeyhint="next" maxlength="200">
+      </div>
+      <div>
+        <label class="sr" for="author">Author (optional)</label>
+        <input id="author" type="text" placeholder="author (optional)" enterkeyhint="done" maxlength="200">
+      </div>
+    </div>
+    <div class="actions">
+      <span class="hint">Ctrl/⌘ + Enter to save</span>
+      <button class="save" id="save" type="submit" disabled>Save</button>
+    </div>
+  </form>
+
+  <section aria-labelledby="listTitle">
+    <div class="list-head">
+      <h2 id="listTitle">Saved <b id="count">0</b></h2>
+      <div class="searchbox" id="searchbox" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>
+        <label class="sr" for="search">Search quotes</label>
+        <input id="search" type="search" placeholder="search quotes" enterkeyhint="search">
+        <button class="clear" id="clear" type="button" aria-label="Clear search" hidden>&times;</button>
+      </div>
+    </div>
+    <ul id="list"></ul>
+    <div class="empty" id="empty" hidden></div>
+  </section>
+</main>
+
+<div class="toast" id="toast" role="status" aria-live="polite">
+  <span id="toastMsg"></span>
+  <button type="button" id="undo" hidden>Undo</button>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  var KEY = 'pagemark.quotes.v1';
+  var DRAFT = 'pagemark.draft.v1';
+
+  var $ = function (id) { return document.getElementById(id); };
+  var form = $('form'), text = $('text'), book = $('book'), author = $('author'), saveBtn = $('save');
+  var list = $('list'), empty = $('empty'), count = $('count');
+  var search = $('search'), searchbox = $('searchbox'), clearBtn = $('clear');
+  var toast = $('toast'), toastMsg = $('toastMsg'), undoBtn = $('undo');
+
+  var ICON = {
+    copy: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V6a2 2 0 0 1 2-2h9"/></svg>',
+    share: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M5 13v5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-5"/></svg>',
+    del: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/></svg>',
+    book: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2z"/><path d="M4 19V5M8 7h7"/></svg>',
+    search: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>'
+  };
+
+  /* ---------- storage (safe if localStorage is blocked) ---------- */
+  var memory = null; // fallback when storage unavailable
+  function load() {
+    try {
+      var raw = localStorage.getItem(KEY);
+      var arr = raw ? JSON.parse(raw) : [];
+      if (!Array.isArray(arr)) return [];
+      return arr.filter(function (q) { return q && typeof q.text === 'string' && q.id; });
+    } catch (e) { return memory || []; }
+  }
+  function persist() {
+    try { localStorage.setItem(KEY, JSON.stringify(quotes)); memory = null; return true; }
+    catch (e) { memory = quotes.slice(); return false; }
+  }
+
+  var quotes = load();
+  quotes.sort(function (a, b) { return b.created - a.created; });
+  var trash = []; // [{quote}] stack for undo
+  var toastTimer = null;
+  var warned = false;
+
+  function save() {
+    if (!persist() && !warned) {
+      warned = true;
+      showToast('Storage unavailable — quotes will not persist');
+    }
+  }
+
+  /* ---------- helpers ---------- */
+  function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+  function clean(s) { return (s || '').replace(/\s+$/g, '').replace(/^\s+/, ''); }
+  function escRe(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  function formatDate(ts) {
+    var d = new Date(ts), now = new Date();
+    var opts = { month: 'short', day: 'numeric' };
+    if (d.getFullYear() !== now.getFullYear()) opts.year = 'numeric';
+    var time = d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    return d.toLocaleDateString([], opts) + ' · ' + time;
+  }
+
+  function plain(q) {
+    var s = '\u201C' + q.text + '\u201D';
+    var src = [q.author, q.book].filter(Boolean).join(', ');
+    if (src) s += '\n\u2014 ' + src;
+    return s;
+  }
+
+  function terms() {
+    return search.value.trim().split(/\s+/).filter(Boolean);
+  }
+
+  function matches(q, ts) {
+    if (!ts.length) return true;
+    var hay = (q.text + ' ' + (q.book || '') + ' ' + (q.author || '')).toLowerCase();
+    return ts.every(function (t) { return hay.indexOf(t.toLowerCase()) !== -1; });
+  }
+
+  // Append text to el, wrapping search matches in <mark>
+  function fill(el, str, re) {
+    if (!re) { el.appendChild(document.createTextNode(str)); return; }
+    var last = 0, m;
+    re.lastIndex = 0;
+    while ((m = re.exec(str)) !== null) {
+      if (m[0] === '') { re.lastIndex++; continue; }
+      if (m.index > last) el.appendChild(document.createTextNode(str.slice(last, m.index)));
+      var mk = document.createElement('mark');
+      mk.textContent = m[0];
+      el.appendChild(mk);
+      last = m.index + m[0].length;
+    }
+    if (last < str.length) el.appendChild(document.createTextNode(str.slice(last)));
+  }
+
+  /* ---------- render ---------- */
+  function render() {
+    var ts = terms();
+    var re = ts.length ? new RegExp(ts.map(escRe).join('|'), 'gi') : null;
+    var shown = quotes.filter(function (q) { return matches(q, ts); });
+
+    count.textContent = quotes.length;
+    searchbox.hidden = quotes.length === 0;
+    clearBtn.hidden = !search.value;
+
+    var frag = document.createDocumentFragment();
+    shown.forEach(function (q) {
+      var li = document.createElement('li');
+      li.className = 'quote';
+      li.dataset.id = q.id;
+
+      var bq = document.createElement('blockquote');
+      var p = document.createElement('p');
+      fill(p, q.text, re);
+      bq.appendChild(p);
+      li.appendChild(bq);
+
+      if (q.author || q.book) {
+        var cite = document.createElement('p');
+        cite.className = 'cite';
+        if (q.author) {
+          var a = document.createElement('span');
+          fill(a, q.author, re);
+          cite.appendChild(a);
+        }
+        if (q.author && q.book) cite.appendChild(document.createTextNode(', '));
+        if (q.book) {
+          var b = document.createElement('i');
+          fill(b, q.book, re);
+          cite.appendChild(b);
+        }
+        li.appendChild(cite);
+      }
+
+      var foot = document.createElement('div');
+      foot.className = 'foot';
+      var time = document.createElement('time');
+      time.dateTime = new Date(q.created).toISOString();
+      time.textContent = formatDate(q.created);
+      foot.appendChild(time);
+
+      var tools = document.createElement('div');
+      tools.className = 'tools';
+      tools.innerHTML =
+        '<button class="tool" data-act="copy" type="button" aria-label="Copy quote" title="Copy">' + ICON.copy + '</button>' +
+        '<button class="tool" data-act="share" type="button" aria-label="Share quote" title="Share">' + ICON.share + '</button>' +
+        '<button class="tool del" data-act="del" type="button" aria-label="Delete quote" title="Delete">' + ICON.del + '</button>';
+      foot.appendChild(tools);
+      li.appendChild(foot);
+      frag.appendChild(li);
+    });
+
+    list.textContent = '';
+    list.appendChild(frag);
+
+    if (!shown.length) {
+      empty.hidden = false;
+      empty.textContent = '';
+      var wrap = document.createElement('div');
+      if (quotes.length) {
+        wrap.innerHTML = ICON.search;
+        wrap.appendChild(document.createTextNode('Nothing matches \u201C' + search.value.trim() + '\u201D.'));
+      } else {
+        wrap.innerHTML = ICON.book;
+        wrap.appendChild(document.createTextNode('No pages marked yet. Your first quote will live here.'));
+      }
+      empty.appendChild(wrap);
+    } else {
+      empty.hidden = true;
+    }
+  }
+
+  /* ---------- toast ---------- */
+  function showToast(msg, withUndo, ms) {
+    clearTimeout(toastTimer);
+    toastMsg.textContent = msg;
+    undoBtn.hidden = !withUndo;
+    toast.classList.add('show');
+    toastTimer = setTimeout(hideToast, ms || (withUndo ? 6000 : 2200));
+  }
+  function hideToast() {
+    toast.classList.remove('show');
+    clearTimeout(toastTimer);
+    // Once the undo window closes, deletions are final
+    trash = [];
+  }
+
+  /* ---------- composer ---------- */
+  function autosize() {
+    text.style.height = 'auto';
+    text.style.height = Math.min(text.scrollHeight + 2, window.innerHeight * 0.5) + 'px';
+  }
+  function updateSave() { saveBtn.disabled = !text.value.trim(); }
+
+  function saveDraft() {
+    try {
+      if (text.value || book.value || author.value) {
+        localStorage.setItem(DRAFT, JSON.stringify({ t: text.value, b: book.value, a: author.value }));
+      } else { localStorage.removeItem(DRAFT); }
+    } catch (e) {}
+  }
+  function loadDraft() {
+    try {
+      var d = JSON.parse(localStorage.getItem(DRAFT) || 'null');
+      if (d) { text.value = d.t || ''; book.value = d.b || ''; author.value = d.a || ''; }
+    } catch (e) {}
+  }
+
+  function onInput() { updateSave(); autosize(); saveDraft(); }
+  text.addEventListener('input', onInput);
+  book.addEventListener('input', saveDraft);
+  author.addEventListener('input', saveDraft);
+
+  form.addEventListener('submit', function (e) {
+    e.preventDefault();
+    var t = clean(text.value);
+    if (!t) { text.focus(); return; }
+    quotes.unshift({
+      id: uid(),
+      text: t,
+      book: book.value.trim(),
+      author: author.value.trim(),
+      created: Date.now()
+    });
+    save();
+    text.value = ''; // keep book/author? clear all for a fresh page
+    book.value = book.value; // retain book/author — typically several quotes per book
+    updateSave(); autosize(); saveDraft();
+    search.value = '';
+    render();
+    showToast('Saved');
+    text.focus({ preventScroll: true });
+    list.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  });
+
+  text.addEventListener('keydown', function (e) {
+    if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') { e.preventDefault(); form.requestSubmit ? form.requestSubmit() : saveBtn.click(); }
+  });
+  [book, author].forEach(function (el) {
+    el.addEventListener('keydown', function (e) {
+      if (e.key === 'Enter') { e.preventDefault(); if (el === book) author.focus(); else form.requestSubmit ? form.requestSubmit() : saveBtn.click(); }
+    });
+  });
+
+  /* ---------- search ---------- */
+  search.addEventListener('input', render);
+  clearBtn.addEventListener('click', function () { search.value = ''; render(); search.focus(); });
+  search.addEventListener('keydown', function (e) { if (e.key === 'Escape') { search.value = ''; render(); } });
+
+  /* ---------- actions ---------- */
+  function copyText(s) {
+    if (navigator.clipboard && navigator.clipboard.writeText && window.isSecureContext) {
+      return navigator.clipboard.writeText(s);
+    }
+    return new Promise(function (resolve, reject) {
+      var ta = document.createElement('textarea');
+      ta.value = s;
+      ta.setAttribute('readonly', '');
+      ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;font-size:16px';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select(); ta.setSelectionRange(0, s.length);
+      var ok = false;
+      try { ok = document.execCommand('copy'); } catch (err) {}
+      document.body.removeChild(ta);
+      ok ? resolve() : reject(new Error('copy failed'));
+    });
+  }
+
+  function doCopy(q) {
+    copyText(plain(q)).then(
+      function () { showToast('Copied'); },
+      function () { showToast('Couldn\u2019t copy'); }
+    );
+  }
+
+  function doShare(q) {
+    if (navigator.share) {
+      navigator.share({ text: plain(q) }).catch(function (err) {
+        if (err && err.name === 'AbortError') return;
+        doCopy(q);
+      });
+    } else {
+      copyText(plain(q)).then(
+        function () { showToast('Sharing unavailable \u2014 copied instead'); },
+        function () { showToast('Couldn\u2019t share'); }
+      );
+    }
+  }
+
+  function doDelete(id) {
+    var i = quotes.findIndex(function (q) { return q.id === id; });
+    if (i < 0) return;
+    trash.push(quotes.splice(i, 1)[0]);
+    save();
+    render();
+    showToast(trash.length > 1 ? trash.length + ' quotes deleted' : 'Quote deleted', true);
+  }
+
+  undoBtn.addEventListener('click', function () {
+    var q = trash.pop();
+    if (!q) return;
+    quotes.push(q);
+    quotes.sort(function (a, b) { return b.created - a.created; });
+    save();
+    render();
+    if (trash.length) showToast(trash.length === 1 ? 'Restored \u2014 1 more to undo' : 'Restored \u2014 ' + trash.length + ' more to undo', true);
+    else { showToast('Restored'); }
+  });
+
+  list.addEventListener('click', function (e) {
+    var btn = e.target.closest('button[data-act]');
+    if (!btn) return;
+    var li = btn.closest('li');
+    var q = quotes.find(function (x) { return x.id === li.dataset.id; });
+    if (!q) return;
+    var act = btn.dataset.act;
+    if (act === 'copy') doCopy(q);
+    else if (act === 'share') doShare(q);
+    else if (act === 'del') doDelete(q.id);
+  });
+
+  /* ---------- sync across tabs ---------- */
+  window.addEventListener('storage', function (e) {
+    if (e.key === KEY) {
+      quotes = load();
+      quotes.sort(function (a, b) { return b.created - a.created; });
+      render();
+    }
+  });
+  window.addEventListener('resize', autosize);
+
+  /* ---------- init ---------- */
+  loadDraft();
+  updateSave();
+  autosize();
+  render();
+})();
+</script>
+</body>
+</html>
